@@ -1,12 +1,16 @@
 import './globals.css';
-import Header from './components/Header';
+import { AuthProvider } from './context/AuthContext';
+
+export const metadata = {
+  title: 'TaskManager',
+  description: 'Application de gestion de projets et tâches',
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <body>
-        <Header />
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
