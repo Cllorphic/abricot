@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -61,36 +61,40 @@ export default function RegisterPage() {
 
           {/* Formulaire */}
           <div>
-            <h1 className="text-3xl font-bold text-orange-600 mb-8">
+            <h1 className="text-3xl font-bold text-orange-700 mb-8">
               Inscription
             </h1>
 
             {error && (
-              <p className="text-red-500 text-sm mb-6 p-3 bg-red-50 rounded">
+              <p className="text-red-800 text-sm mb-6 p-3 bg-red-50 rounded">
                 {error}
               </p>
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="register-name" className="block text-sm font-medium text-gray-700 mb-2">
                   Nom
                 </label>
                 <input
+                  id="register-name"
                   type="text"
-                  className="w-full border-b border-gray-300 bg-white px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+                  autoComplete="name"
+                  className="w-full border-b border-gray-300 bg-white text-gray-900 px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email
                 </label>
                 <input
+                  id="register-email"
                   type="email"
-                  className="w-full border-b border-gray-300 bg-white px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+                  autoComplete="email"
+                  className="w-full border-b border-gray-300 bg-white text-gray-900 px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -98,17 +102,20 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 mb-2">
                   Mot de passe
                 </label>
                 <input
+                  id="register-password"
                   type="password"
-                  className="w-full border-b border-gray-300 bg-white px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+                  autoComplete="new-password"
+                  aria-describedby="password-hint"
+                  className="w-full border-b border-gray-300 bg-white text-gray-900 px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <p className="text-xs text-gray-400 mt-2">
+                <p id="password-hint" className="text-xs text-gray-700 mt-2">
                   Min. 8 caractères, une majuscule, une minuscule, un chiffre
                 </p>
               </div>
@@ -124,9 +131,9 @@ export default function RegisterPage() {
           </div>
 
           {/* Lien connexion */}
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-700">
             Déjà inscrit ?{' '}
-            <Link href="/login" className="text-orange-600 hover:underline">
+            <Link href="/login" className="text-orange-700 hover:underline">
               Se connecter
             </Link>
           </div>

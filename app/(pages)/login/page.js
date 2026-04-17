@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,24 +46,26 @@ export default function LoginPage() {
 
           {/* Formulaire */}
           <div>
-            <h1 className="text-3xl font-bold text-orange-600 mb-8">
+            <h1 className="text-3xl font-bold text-orange-700 mb-8">
               Connexion
             </h1>
 
             {error && (
-              <p className="text-red-500 text-sm mb-6 p-3 bg-red-50 rounded">
+              <p className="text-red-800 text-sm mb-6 p-3 bg-red-50 rounded">
                 {error}
               </p>
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email
                 </label>
                 <input
+                  id="login-email"
                   type="email"
-                  className="w-full border-b border-gray-300 bg-white px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+                  autoComplete="email"
+                  className="w-full border-b border-gray-300 bg-white text-gray-900 px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -71,12 +73,14 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-2">
                   Mot de passe
                 </label>
                 <input
+                  id="login-password"
                   type="password"
-                  className="w-full border-b border-gray-300 bg-white px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+                  autoComplete="current-password"
+                  className="w-full border-b border-gray-300 bg-white text-gray-900 px-3 py-3 focus:outline-none focus:border-orange-500 transition-colors"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -94,16 +98,16 @@ export default function LoginPage() {
 
             <Link
               href="#"
-              className="text-orange-600 text-sm mt-6 inline-block hover:underline"
+              className="text-orange-700 text-sm mt-6 inline-block hover:underline"
             >
               Mot de passe oublié?
             </Link>
           </div>
 
           {/* Lien inscription */}
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-700">
             Pas encore de compte ?{' '}
-            <Link href="/register" className="text-orange-600 hover:underline">
+            <Link href="/register" className="text-orange-700 hover:underline">
               Créer un compte
             </Link>
           </div>
