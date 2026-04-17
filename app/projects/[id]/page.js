@@ -117,17 +117,17 @@ function CalendarView({ tasks, onTaskClick }) {
       {/* Header navigation */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <button type="button" onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-500">
+          <button type="button" onClick={prevMonth} aria-label="Mois précédent" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-700">
             <Icon.ChevronLeft />
           </button>
           <h3 className="text-sm font-semibold text-gray-900 min-w-[160px] text-center">
             {MONTHS_FR[month]} {year}
           </h3>
-          <button type="button" onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-500">
+          <button type="button" onClick={nextMonth} aria-label="Mois suivant" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-700">
             <Icon.ChevronRight />
           </button>
         </div>
-        <button type="button" onClick={goToday} className="text-xs text-orange-600 hover:text-orange-700 font-medium px-3 py-1 rounded-full border border-orange-200 hover:bg-orange-50 transition-colors">
+        <button type="button" onClick={goToday} className="text-xs text-orange-700 hover:text-orange-800 font-medium px-3 py-1 rounded-full border border-orange-300 hover:bg-orange-50 transition-colors">
           Aujourd&apos;hui
         </button>
       </div>
@@ -975,13 +975,14 @@ export default function ProjectDetailPage() {
                   {/* Recherche */}
                   <div className="relative">
                     <input
-                      type="text"
+                      type="search"
+                      aria-label="Rechercher une tâche"
                       placeholder="Rechercher une tâche"
-                      className="border border-gray-200 rounded-full pl-4 pr-9 py-1.5 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400 w-44"
+                      className="border border-gray-300 rounded-full pl-4 pr-9 py-1.5 text-sm text-gray-900 placeholder-gray-600 bg-white focus:outline-none focus:border-orange-500 w-44"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
-                    <Icon.Search cls="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                    <Icon.Search cls="w-4 h-4 text-gray-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
               </div>

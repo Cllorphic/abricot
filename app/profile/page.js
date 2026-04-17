@@ -3,18 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 export default function ProfilePage() {
-  const { user, loading, authFetch, logout } = useAuth();
+  const { user, loading, authFetch } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Pré-remplir les champs quand le user est chargé
   useEffect(() => {
     if (user) {
       setName(user.name || '');
@@ -22,27 +23,35 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  // ──── Mise à jour du profil ────
-  const handleUpdateProfile = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
     setIsSaving(true);
 
     try {
-      const res = await authFetch('/auth/profile', {
+      // Mettre à jour le profil
+      const profileRes = await authFetch('/auth/profile', {
         method: 'PUT',
         body: JSON.stringify({ name, email }),
       });
+      const profileData = await profileRes.json();
+      if (!profileRes.ok) throw new Error(profileData.message || 'Erreur lors de la mise à jour');
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Erreur lors de la mise à jour');
+      // Si nouveau mot de passe renseigné, le mettre à jour aussi
+      if (newPassword) {
+        if (!currentPassword) { setError('Le mot de passe actuel est requis'); setIsSaving(false); return; }
+        const pwRes = await authFetch('/auth/password', {
+          method: 'PUT',
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        const pwData = await pwRes.json();
+        if (!pwRes.ok) throw new Error(pwData.message || 'Erreur mot de passe');
+        setCurrentPassword('');
+        setNewPassword('');
       }
 
-      setMessage('Profil mis à jour avec succès');
-      setIsEditing(false);
+      setMessage('Informations mises à jour avec succès');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,185 +59,83 @@ export default function ProfilePage() {
     }
   };
 
-  // ──── Changement de mot de passe ────
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [passwordMessage, setPasswordMessage] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-
-  const handleUpdatePassword = async (e) => {
-    e.preventDefault();
-    setPasswordError('');
-    setPasswordMessage('');
-
-    if (newPassword.length < 8) {
-      setPasswordError('Le nouveau mot de passe doit faire au moins 8 caractères');
-      return;
-    }
-
-    try {
-      const res = await authFetch('/auth/password', {
-        method: 'PUT',
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Erreur lors du changement de mot de passe');
-      }
-
-      setPasswordMessage('Mot de passe mis à jour');
-      setCurrentPassword('');
-      setNewPassword('');
-      setShowPasswordForm(false);
-    } catch (err) {
-      setPasswordError(err.message);
-    }
-  };
-
-  // Afficher un loader pendant le chargement
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p>Chargement...</p>
-      </main>
-    );
+    return <div className="flex min-h-screen items-center justify-center"><p className="text-gray-500">Chargement...</p></div>;
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="max-w-lg mx-auto mt-10 p-6">
-        <h1 className="text-2xl font-bold mb-6">Mon profil</h1>
-
-        {/* Messages de succès / erreur */}
-        {message && (
-          <p className="text-green-600 text-sm mb-4 p-2 bg-green-50 rounded">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">
-            {error}
-          </p>
-        )}
-
-        {/* ──── Formulaire profil ──── */}
-        <form onSubmit={handleUpdateProfile} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nom</label>
-            <input
-              type="text"
-              className="border p-2 rounded w-full disabled:bg-gray-100"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={!isEditing}
-            />
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-10">
+          <div className="mb-8">
+            <h1 className="text-xl font-bold text-gray-900">Mon compte</h1>
+            <p className="text-sm text-orange-500 mt-1">{user?.name || user?.email}</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              className="border p-2 rounded w-full disabled:bg-gray-100"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={!isEditing}
-            />
-          </div>
+          {message && <p className="text-green-700 text-sm mb-6 p-3 bg-green-50 rounded-xl">{message}</p>}
+          {error && <p className="text-red-600 text-sm mb-6 p-3 bg-red-50 rounded-xl">{error}</p>}
 
-          <div className="flex gap-2">
-            {isEditing ? (
-              <>
-                <button
-                  type="submit"
-                  className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
-                </button>
-                <button
-                  type="button"
-                  className="border px-4 py-2 rounded"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setName(user?.name || '');
-                    setEmail(user?.email || '');
-                    setError('');
-                  }}
-                >
-                  Annuler
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="bg-black text-white px-4 py-2 rounded"
-                onClick={() => setIsEditing(true)}
-              >
-                Modifier
-              </button>
-            )}
-          </div>
-        </form>
-
-        {/* ──── Changement de mot de passe ──── */}
-        <div className="mt-8 pt-6 border-t">
-          <button
-            type="button"
-            className="text-sm text-blue-500 underline"
-            onClick={() => setShowPasswordForm(!showPasswordForm)}
-          >
-            {showPasswordForm ? 'Masquer' : 'Changer le mot de passe'}
-          </button>
-
-          {showPasswordForm && (
-            <form
-              onSubmit={handleUpdatePassword}
-              className="flex flex-col gap-4 mt-4"
-            >
-              {passwordError && (
-                <p className="text-red-500 text-sm">{passwordError}</p>
-              )}
-              {passwordMessage && (
-                <p className="text-green-600 text-sm">{passwordMessage}</p>
-              )}
-
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <div>
+              <label htmlFor="profile-name" className="block text-sm font-medium text-gray-900 mb-2">Nom</label>
               <input
+                id="profile-name"
+                type="text"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Votre nom"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="profile-email" className="block text-sm font-medium text-gray-900 mb-2">Email</label>
+              <input
+                id="profile-email"
+                type="email"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Votre email"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="profile-current-pw" className="block text-sm font-medium text-gray-900 mb-2">Mot de passe actuel</label>
+              <input
+                id="profile-current-pw"
                 type="password"
-                placeholder="Mot de passe actuel"
-                className="border p-2 rounded"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                required
+                placeholder="••••••••••"
               />
+            </div>
+
+            <div>
+              <label htmlFor="profile-new-pw" className="block text-sm font-medium text-gray-900 mb-2">Nouveau mot de passe</label>
               <input
+                id="profile-new-pw"
                 type="password"
-                placeholder="Nouveau mot de passe"
-                className="border p-2 rounded"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                required
+                placeholder="Laisser vide pour ne pas changer"
               />
-              <button className="bg-black text-white p-2 rounded">
-                Mettre à jour le mot de passe
-              </button>
-            </form>
-          )}
-        </div>
+            </div>
 
-        {/* ──── Déconnexion ──── */}
-        <div className="mt-8 pt-6 border-t">
-          <button
-            onClick={logout}
-            className="text-red-500 text-sm underline"
-          >
-            Se déconnecter
-          </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="bg-gray-900 text-white font-medium py-3 px-6 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 w-fit"
+            >
+              {isSaving ? 'Enregistrement...' : 'Modifier les informations'}
+            </button>
+          </form>
         </div>
       </main>
-    </>
+      <Footer />
+    </div>
   );
 }

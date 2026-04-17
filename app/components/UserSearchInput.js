@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 
 /**
  * Composant réutilisable de recherche d'utilisateurs dans la BDD
  * Appelle GET /users/search?q=...
  */
-export default function UserSearchInput({ authFetch, selected = [], onAdd, onRemove, placeholder = 'Rechercher un utilisateur...' }) {
+export default function UserSearchInput({ authFetch, selected = [], onAdd, onRemove, placeholder = 'Rechercher un utilisateur...', label = 'Rechercher un utilisateur' }) {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -14,6 +14,7 @@ export default function UserSearchInput({ authFetch, selected = [], onAdd, onRem
   const [searchError, setSearchError] = useState('');
   const timeout = useRef(null);
   const containerRef = useRef(null);
+  const inputId = useId();
 
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
@@ -41,17 +42,15 @@ export default function UserSearchInput({ authFetch, selected = [], onAdd, onRem
       setLoading(true);
       setSearchError('');
       try {
-        // Essayer plusieurs formats d'URL au cas où
-const res = await authFetch(`/users/search?query=${encodeURIComponent(search.trim())}`);        const data = await res.json();
+        const res = await authFetch(`/users/search?query=${encodeURIComponent(search.trim())}`);
+        const data = await res.json();
 
         let users = [];
 
         if (res.ok) {
-          // Gérer tous les formats de réponse possibles
           if (Array.isArray(data)) {
             users = data;
           } else if (data.success !== undefined) {
-            // Format { success, data }
             if (Array.isArray(data.data)) {
               users = data.data;
             } else if (data.data && typeof data.data === 'object') {
@@ -69,7 +68,6 @@ const res = await authFetch(`/users/search?query=${encodeURIComponent(search.tri
           setSearchError('Erreur de recherche');
         }
 
-        // Filtrer les utilisateurs déjà sélectionnés
         const selectedIds = selected.map((s) => s.id || s.email);
         const filtered = users.filter(
           (u) => !selectedIds.includes(u.id) && !selectedIds.includes(u.email)
@@ -97,7 +95,7 @@ const res = await authFetch(`/users/search?query=${encodeURIComponent(search.tri
           {selected.map((u) => (
             <span
               key={u.id || u.email}
-              className="flex items-center gap-1 bg-orange-50 text-orange-700 text-xs font-medium px-3 py-1.5 rounded-full"
+              className="flex items-center gap-1 bg-orange-50 text-orange-800 text-xs font-medium px-3 py-1.5 rounded-full"
             >
               {u.name || u.email}
               <button
@@ -116,15 +114,19 @@ const res = await authFetch(`/users/search?query=${encodeURIComponent(search.tri
       {/* Champ de recherche */}
       <div className="relative">
         <input
+          id={inputId}
           type="text"
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400"
+          aria-label={label}
+          className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-10 text-sm text-gray-900 placeholder-gray-600 bg-white focus:outline-none focus:border-orange-500"
           placeholder={placeholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onFocus={() => results.length > 0 && setShowDropdown(true)}
         />
         <svg
-          className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2"
+          aria-hidden="true"
+          focusable="false"
+          className="w-5 h-5 text-gray-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -133,13 +135,13 @@ const res = await authFetch(`/users/search?query=${encodeURIComponent(search.tri
 
       {/* Dropdown résultats */}
       {showDropdown && (
-        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-48 overflow-y-auto">
           {loading ? (
-            <p className="px-4 py-3 text-sm text-gray-500">Recherche...</p>
+            <p className="px-4 py-3 text-sm text-gray-700">Recherche...</p>
           ) : searchError ? (
-            <p className="px-4 py-3 text-sm text-red-500">{searchError}</p>
+            <p className="px-4 py-3 text-sm text-red-800">{searchError}</p>
           ) : results.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-gray-500">Aucun résultat pour &quot;{search}&quot;</p>
+            <p className="px-4 py-3 text-sm text-gray-700">Aucun résultat pour &quot;{search}&quot;</p>
           ) : (
             results.map((u) => (
               <button
@@ -150,10 +152,10 @@ const res = await authFetch(`/users/search?query=${encodeURIComponent(search.tri
                   setSearch('');
                   setShowDropdown(false);
                 }}
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between gap-2"
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 flex items-center justify-between gap-2"
               >
                 <span className="font-medium text-gray-900 truncate">{u.name || u.email}</span>
-                <span className="text-xs text-gray-500 shrink-0">{u.email}</span>
+                <span className="text-xs text-gray-700 shrink-0">{u.email}</span>
               </button>
             ))
           )}
