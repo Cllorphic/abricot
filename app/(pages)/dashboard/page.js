@@ -9,6 +9,7 @@ import TaskCardList from '../../components/tasks/TaskCardList';
 import KanbanColumn from '../../components/tasks/KanbanColumn';
 import TaskDetailModal from '../../components/tasks/TaskDetailModal';
 import CreateProjectModal from '../../components/projects/CreateProjectModal';
+import ProjectListItem from '../../components/projects/ProjectListItem';
 import { ChevronLeftIcon, ChevronRightIcon } from '../../components/ui/Icon';
 import { priorityOrder } from '../../lib/taskConfig';
 
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const { user, loading, authFetch } = useAuth();
 
   const [tasks, setTasks] = useState([]);
+  const [projectsWithTasks, setProjectsWithTasks] = useState([]); // projets détaillés pour la vue "Projets"
   const [view, setView] = useState('list');
   const [search, setSearch] = useState('');
   const [loadingData, setLoadingData] = useState(true);
@@ -84,6 +86,9 @@ export default function DashboardPage() {
               })
             );
 
+            // Sauvegarder les projets valides pour la vue "Projets"
+            setProjectsWithTasks(details.filter(Boolean));
+
             details.forEach((proj) => {
               if (!proj?.tasks) return;
               proj.tasks.forEach((task) => {
@@ -123,14 +128,13 @@ export default function DashboardPage() {
       t.description?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Vue liste : les 10 tâches actives les plus récemment créées
+  // Vue liste : les 10 dernières tâches créées (plus récentes d'abord)
   const listTasks = filteredTasks
-    .filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED')
     .slice()
     .sort((a, b) => {
       const da = new Date(a.createdAt || a.created_at || 0).getTime();
       const db = new Date(b.createdAt || b.created_at || 0).getTime();
-      return db - da; // plus récent en premier
+      return db - da;
     })
     .slice(0, 10);
 
@@ -159,6 +163,48 @@ export default function DashboardPage() {
     const now = new Date();
     setKanbanMonth({ year: now.getFullYear(), month: now.getMonth() });
   };
+
+  // Vue "Projets" : liste des projets où l'utilisateur a des tâches assignées.
+  // Vue "Projets" : liste des projets où l'utilisateur a des tâches assignées.
+  // On compte les tâches "À faire" assignées à l'utilisateur et on trie par ce nombre décroissant
+  // (les projets avec le plus de tâches à faire apparaissent en premier).
+  const assignedTaskIds = new Set(tasks.map((t) => t.id));
+
+  const projectsWithAssignedTasks = projectsWithTasks
+    .map((proj) => {
+      // Tâches de ce projet assignées à l'utilisateur courant
+      const userTasks = (proj.tasks || []).filter((t) => assignedTaskIds.has(t.id));
+      if (userTasks.length === 0) return null;
+
+      // Filtre recherche : soit nom/description projet, soit tâches du projet
+      const matchSearch = !search
+        || proj.name?.toLowerCase().includes(search.toLowerCase())
+        || proj.description?.toLowerCase().includes(search.toLowerCase())
+        || userTasks.some((t) =>
+          t.title?.toLowerCase().includes(search.toLowerCase())
+          || t.description?.toLowerCase().includes(search.toLowerCase())
+        );
+      if (!matchSearch) return null;
+
+      const todoCount = userTasks.filter((t) => t.status === 'TODO').length;
+      const inProgressCount = userTasks.filter((t) => t.status === 'IN_PROGRESS').length;
+
+      return {
+        project: proj,
+        assignedTasksCount: { total: userTasks.length },
+        todoCount,
+        inProgressCount,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      // Tri principal : plus de "À faire" d'abord
+      if (b.todoCount !== a.todoCount) return b.todoCount - a.todoCount;
+      // Tri secondaire : plus de "En cours" ensuite
+      if (b.inProgressCount !== a.inProgressCount) return b.inProgressCount - a.inProgressCount;
+      // Tri final : plus de tâches assignées au total
+      return b.assignedTasksCount.total - a.assignedTasksCount.total;
+    });
 
   if (loading) {
     return (
@@ -194,6 +240,7 @@ export default function DashboardPage() {
           {[
             { key: 'list', label: 'Liste', d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
             { key: 'kanban', label: 'Kanban', d: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z' },
+            { key: 'projects', label: 'Projets', d: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -218,7 +265,7 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
               <div>
                 <h2 className="font-semibold text-gray-900">Mes tâches assignées</h2>
-                <p className="text-sm text-gray-700">Les 10 dernières tâches créées</p>
+                <p className="text-sm text-gray-700">Les 10 dernières</p>
               </div>
               <SearchBar
                 id="search-tasks-list"
@@ -290,6 +337,42 @@ export default function DashboardPage() {
               <KanbanColumn title="En cours" tasks={kanban.IN_PROGRESS} onView={setSelectedTask} />
               <KanbanColumn title="Terminées" tasks={kanban.DONE} onView={setSelectedTask} />
             </div>
+          </div>
+        )}
+
+        {/* Vue Projets */}
+        {view === 'projects' && (
+          <div className="border border-gray-200 rounded-2xl p-4 sm:p-6" role="tabpanel">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div>
+                <h2 className="font-semibold text-gray-900">Mes projets</h2>
+                <p className="text-sm text-gray-700">Projets où vous avez des tâches assignées, triés par charge de travail</p>
+              </div>
+              <SearchBar
+                id="search-projects"
+                value={search}
+                onChange={setSearch}
+                placeholder="Rechercher un projet"
+                label="Rechercher un projet"
+              />
+            </div>
+            {loadingData ? (
+              <p className="text-gray-700 text-center py-12">Chargement...</p>
+            ) : projectsWithAssignedTasks.length === 0 ? (
+              <p className="text-gray-700 text-center py-12">
+                {search ? 'Aucun projet trouvé' : 'Aucun projet avec des tâches assignées'}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3 sm:gap-4">
+                {projectsWithAssignedTasks.map(({ project, assignedTasksCount }) => (
+                  <ProjectListItem
+                    key={project.id}
+                    project={project}
+                    assignedTasksCount={assignedTasksCount}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

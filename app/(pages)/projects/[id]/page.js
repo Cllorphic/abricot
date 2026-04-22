@@ -130,14 +130,19 @@ export default function ProjectDetailPage() {
   const canCreateTask = isAdmin || isContributor;
   const canViewTask = isAdmin || isContributor;
 
-  // Filtrage des tâches (recherche + statut)
-  const filteredTasks = tasks.filter((t) => {
-    const matchSearch = !search
-      || t.title?.toLowerCase().includes(search.toLowerCase())
-      || t.description?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Ordre d'affichage des statuts : À faire → En cours → Terminées → Annulées
+  const statusOrder = { TODO: 0, IN_PROGRESS: 1, DONE: 2, CANCELLED: 3 };
+
+  // Filtrage des tâches (recherche + statut) puis tri par statut
+  const filteredTasks = tasks
+    .filter((t) => {
+      const matchSearch = !search
+        || t.title?.toLowerCase().includes(search.toLowerCase())
+        || t.description?.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99));
 
   if (loading) {
     return (
@@ -292,9 +297,9 @@ export default function ProjectDetailPage() {
 
                   {/* Filtre statut */}
                   <div className="relative">
-                    <label htmlFor="status-filter" className="sr-only">Filtrer par statut</label>
                     <select
                       id="status-filter"
+                      aria-label="Filtrer par statut"
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                       className="appearance-none border border-gray-300 rounded-full pl-4 pr-8 py-1.5 text-sm text-gray-800 bg-white focus:outline-none focus:border-orange-500 cursor-pointer"
